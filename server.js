@@ -1,7 +1,7 @@
 const express = require('express');
 const https = require('https');
 const path = require('path');
-
+const fs = require('fs');
 const app = express();
 const PORT = 4000;
 
@@ -34,6 +34,57 @@ app.get('/data', (req, res) => {
     res.status(500).send('Error fetching data from API');
   });
 });
+
+app.get('setquestsLevel', (res, req) => {
+  function getQuestLevel(item) {
+    const critQuests = [];
+    let ids = extractQfValues(item.startCriterion);
+    
+    while (ids.length > 0) {
+        const id = ids.shift();
+        const critQuest = data["data"].find(q => q.id === id);
+        
+        if (critQuest) {
+            critQuests.push(critQuest);
+            ids = ids.concat(extractQfValues(critQuest.startCriterion));
+        }
+    }
+
+    return critQuests.length
+  }
+
+  let data = '';
+  https.get('https://api.dofusdb.fr/quests?$limit=200&lang=fr', (apiRes) => {
+    apiRes.on('data', (chunk) => {
+      data += chunk;
+    });
+    apiRes.on('end', () => {
+      try {
+        const parsedData = JSON.parse(data);
+        const quests = data.data.map((q) => {
+          q.depth = getQuestLevel(q)
+          return q
+        })
+        // Write quests to a JSON file
+        fs.writeFile('quests.json', JSON.stringify(quests, null, 2), (err) => {
+          if (err) {
+            console.error('Error writing to file', err);
+            res.status(500).send('Error while writing data to file');
+          } else {
+            console.log('Data successfully written to quests.json');
+            res.status(200).send('Data successfully written to file');
+          }
+        });
+      } catch (e) {
+        res.status(500).send('Error while parsing data from API');
+      }
+    });
+  }).on('error', (e) => {
+    res.status(500).send('Error fetching data from API');
+  });
+
+
+})
 
 // 404 route for undefined paths
 app.use((req, res) => {

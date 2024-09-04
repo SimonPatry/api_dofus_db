@@ -10,49 +10,115 @@
     fetch('/data')
       .then(response => response.json())
       .then(data => {
-        function extractQfValues(startCriterion) {
-          const qfPattern = /Qf=(\d+)/g;
-          let match;
-          const qfValues = [];
-          while ((match = qfPattern.exec(startCriterion)) !== null) {
-            qfValues.push(parseInt(match[1], 10));
-          }
-          return qfValues;
+        // Function to parse the startCriterions without a delimiter
+        function parseCriterions(startCriterions) {
+            let levelReq = null;
+            let questDeps = [];
+
+            const plIndex = startCriterions.indexOf('PL=');
+            const qfIndex = startCriterions.indexOf('Qf=');
+
+            // Extract level requirement if it exists
+            if (plIndex !== -1) {
+                const levelEnd = startCriterions.indexOf('Qf=', plIndex);
+                levelReq = parseInt(startCriterions.substring(plIndex + 3, levelEnd !== -1 ? levelEnd : undefined), 10);
+            }
+            
+            // Extract quest dependencies if they exist
+            let remainingString = startCriterions;
+            while (remainingString.indexOf('Qf=') !== -1) {
+                const depStart = remainingString.indexOf('Qf=');
+                const depEnd = remainingString.indexOf('PL=', depStart);
+                const dep = parseInt(remainingString.substring(depStart + 3, depEnd !== -1 ? depEnd : undefined), 10);
+                questDeps.push(dep);
+                remainingString = remainingString.substring(depEnd !== -1 ? depEnd : remainingString.length);
+            }
+            
+            return { levelReq, questDeps };
         }
 
-        function displayCritsQuests(item) {
-          const critQuests = [];
-          let ids = extractQfValues(item.startCriterion);
-          
-          while (ids.length > 0) {
-              const id = ids.shift();
-              const critQuest = data["data"].find(q => q.id === id);
-              
-              if (critQuest) {
-                  critQuests.push(critQuest);
-                  ids = ids.concat(extractQfValues(critQuest.startCriterion));
-              }
+        // Function to build the graph
+        function buildGraph(quests) {
+          const graph = {};
+          const inDegree = {};
+          const levelMap = {};
+          const noConditionQuests = []; // To hold quests with no conditions
+
+          for (let quest of quests) {
+            const { id, startCriterion } = quest;
+            const questIntId = parseInt(id, 10);
+            const { levelReq, questDeps } = parseCriterions(startCriterion);
+            
+            graph[questIntId] = [];
+            inDegree[questIntId] = inDegree[questIntId] || 0;
+            
+            // If no level requirement and no dependencies, add to noConditionQuests
+            if (levelReq === null && questDeps.length === 0) {
+                noConditionQuests.push(questIntId);
+                continue;
+            }
+
+            // If there is a level requirement, add it to the level map
+            if (levelReq !== null) {
+                levelMap[levelReq] = levelMap[levelReq] || [];
+                levelMap[levelReq].push(questIntId);
+            }
+            
+            // Set up graph edges based on dependencies
+            for (let dep of questDeps) {
+                graph[dep] = graph[dep] || [];
+                graph[dep].push(questIntId);
+                inDegree[questIntId] = (inDegree[questIntId] || 0) + 1;
+            }
+          }
+          return { graph, inDegree, levelMap, noConditionQuests };
+        }
+
+        // Function to find the optimal quest order
+        function findOptimalQuestOrder(quests, maxLevel = 200) {
+        const { graph, inDegree, levelMap } = buildGraph(quests);
+        const order = [];
+        const availableQuests = [];
+
+        // Iterate through levels
+        for (let level = 1; level <= maxLevel; level++) {
+          console.log("quest " + level)
+            if (levelMap[level]) {
+                for (let quest of levelMap[level]) {
+                    if (inDegree[quest] === 0) {
+                        availableQuests.push(quest);
+                    }
+                }
+            }
+
+            while (availableQuests.length > 0) {
+                const currentQuest = availableQuests.shift();
+                order.push(currentQuest);
+
+                for (let neighbor of graph[currentQuest]) {
+                    inDegree[neighbor]--;
+                    if (inDegree[neighbor] === 0) {
+                        availableQuests.push(neighbor);
+                    }
+                }
+            }
           }
 
-          if (critQuests.length > 0) {
-            return critQuests.map(q => `<li>${q.name.fr}</li>`).join('');
-          } else {
-            return '';
-          }
+          return order;
         }
+
+        const optimalOrder = findOptimalQuestOrder(data["data"]);
+        console.log(optimalOrder);
+
 
         const list = document.getElementById('quest-list');
-        console.log(data);
         data["data"].forEach(item => {
-          console.log(item.startCriterion);
           const listItem = document.createElement('li');
 
           listItem.innerHTML = `
             <div>
               <p>name: ${item.name.fr}</p>
-              <ul>
-                ${ item.startCriterion.length > 0 ? displayCritsQuests(item) : '' }
-              </ul>
+              
             </div>
           `;
           list.appendChild(listItem);
