@@ -8,8 +8,8 @@ La fonction buildGraph crée des objets pour mapper de différentes manières le
   * inDegree: quests depth meaning number of quests needed before being able tot take it
   * levelMap: {"level": ["accessibleQuestId", "accessibleQuestId"]}
   * noConditionQuests: struct identical to graph - quests that don't seem to have any requirement
-  * CAUTION: conditions check is incomplete (05/09/2024)
 
+CAUTION: conditions check is incomplete (05/09/2024)
 
 ## Installation
 1. Clone:
