@@ -1,11 +1,11 @@
 const https = require('https');
 
 // Wrap the HTTPS request in a Promise
-const loadData = () => {
+const loadData = (skip, step) => {
   return new Promise((resolve, reject) => {
     let data = '';
 
-    https.get('https://api.dofusdb.fr/quests?$limit=200&lang=fr', (apiRes) => {
+    https.get(`https://api.dofusdb.fr/quests?$skip=${skip}$limit=${step}&lang=fr`, (apiRes) => {
       apiRes.on('data', (chunk) => {
         data += chunk;
       });
@@ -28,13 +28,18 @@ const loadData = () => {
 };
 
 const fetchData = async () => {
-  try {
-    const data = await loadData();
-    return JSON.parse(data).data;
-  } catch (error) {
-    console.error('Error occurred:', error.message);
-    return [];
+  const max = 2000
+  const step = 50;
+  const data = []
+  for (let i = 0; i < max; i += step) {
+    try {
+      const res = await loadData(i, step);
+      data.push(...JSON.parse(res).data);
+    } catch (error) {
+      console.error('Error occurred:', error.message);
+    }
   }
+  return data
 };
 
 module.exports = {
