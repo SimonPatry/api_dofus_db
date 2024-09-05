@@ -59,6 +59,15 @@ const buildGraph = (quests) => {
       inDegree[questIntId] = (inDegree[questIntId] || 0) + 1;
     }
   }
+
+  // data structure
+
+  // graph: {"questId" = ["mustBeFinishedQuestId", "mustBeFinishedQuestId"]}
+  // inDegree: quests depth meaning number of quests needed before being able tot take it
+  // levelMap: {"level": ["accessibleQuestId", "accessibleQuestId"]}
+  // noConditionQuests: struct identical to graph - quests that don't seem to have any requirement
+  // - CAUTION: conditions check is incomplete (05/09/2024)
+
   return { graph, inDegree, levelMap, noConditionQuests };
 }
 

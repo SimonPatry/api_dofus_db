@@ -39,5 +39,5 @@ const fetchData = async () => {
 
 module.exports = {
   loadData,
-  fetchData
+  fetchData,
 };

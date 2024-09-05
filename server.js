@@ -10,11 +10,13 @@ app.use(express.static('public'));
 
 
 const { fetchData } = require('./javascript/loadData');
+const { buildGraph } = require('./javascript/criterions');
 
 
 // Route to render the homepage
 app.get('/', async (req, res) => {
     const data = await fetchData();
+    console.log(buildGraph(data))
     res.render('index', {data});
 });
 
