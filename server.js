@@ -16,8 +16,8 @@ const { buildGraph } = require('./javascript/criterions');
 // Route to render the homepage
 app.get('/', async (req, res) => {
     const data = await fetchData();
-    console.log(buildGraph(data))
-    res.render('index', {data});
+    const quests = buildGraph(data)
+    res.render('index', {quests});
 });
 
 // Start the server
