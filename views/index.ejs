@@ -6,14 +6,20 @@
     <title>title</title>
 </head>
 <body>
-    <h1>title</h1>
+    <h1>Quests</h1>
+    <h2>No condition quests</h2>
+    <ul>
+      <% quests.noConditionQuests.forEach((id) => { %>
+        <li>ID: <%= id %></li>
+      <% }); %>
+    </ul>
     <% Object.keys(quests.levelMap).forEach((level) => { %>
-        <h2>Level: <%= level %></h2>
-        <ul>
-            <% quests.levelMap[level].forEach((id) => { %>
-                <li>ID: <%= id %></li>
-            <% }); %>
-        </ul>
+      <h2>Level: <%= level %></h2>
+      <ul>
+        <% quests.levelMap[level].forEach((id) => { %>
+          <li>ID: <%= id %></li>
+        <% }); %>
+      </ul>
     <% }); %>
 </body>
 </html>

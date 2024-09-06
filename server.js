@@ -17,6 +17,7 @@ const { buildGraph } = require('./javascript/criterions');
 app.get('/', async (req, res) => {
     const data = await fetchData();
     const quests = buildGraph(data)
+    console.log(quests.noConditionQuests)
     res.render('index', {quests});
 });
 
